@@ -27,7 +27,7 @@ const orderSchema = z.object({
 
 export async function submitOrder(_: FormState, fd: FormData): Promise<FormState> {
   if (String(fd.get('website') || '')) return { ok: true }; // honeypot
-  if (limited('order:' + (await ip()))) return { error: 'Too many requests. Please try again later or message us on WhatsApp.' };
+  if (limited('order:all', 300) || limited('order:' + (await ip()))) return { error: 'Too many requests. Please try again later or message us on WhatsApp.' };
   const parsed = orderSchema.safeParse({ name: fd.get('name'), whatsapp: fd.get('whatsapp'), email: fd.get('email') || '', plan: fd.get('plan') });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const { name, whatsapp, email, plan } = parsed.data;

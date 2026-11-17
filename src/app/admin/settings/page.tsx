@@ -1,11 +1,17 @@
 import { getSettings } from '@/lib/settings';
 import { db } from '@/lib/db';
 import { Head, Saved, Toggle } from '@/components/AdminUI';
-import { changePassword, saveBusiness, savePaypal } from '../actions';
+import QRCode from 'qrcode';
+import { changePassword, saveBusiness, savePaypal, start2fa, confirm2fa, disable2fa, logoutEverywhere } from '../actions';
+import { getSession } from '@/lib/auth';
+import { otpauthUri } from '@/lib/totp';
 
 export default async function Settings({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
   const sp = await searchParams;
-  const [s, users] = await Promise.all([getSettings(), db.adminUser.findMany()]);
+  const [s, users, sess] = await Promise.all([getSettings(), db.adminUser.findMany(), getSession()]);
+  const me = users.find((u) => u.id === sess?.uid);
+  const setup = !!me && !me.totpEnabled && !!me.totpSecret && sp.setup2fa === '1';
+  const qr = setup && me ? await QRCode.toDataURL(otpauthUri(me.totpSecret, me.email, s.siteName), { margin: 1, width: 220 }) : '';
   const pp = s.paypalEnabled === '1';
   return (
     <>
@@ -41,8 +47,39 @@ export default async function Settings({ searchParams }: { searchParams: Promise
           <form action={changePassword} className="box">
             <h2>Your account</h2>
             <div className="sub" style={{ marginBottom: 12 }}>{users.map((u) => u.email).join(', ')}</div>
-            <div className="f"><label htmlFor="pw">New password (min. 10 characters)</label><input id="pw" name="password" type="password" className="in" minLength={10} autoComplete="new-password" required /></div>
+            <div className="f"><label htmlFor="cp">Current password</label><input id="cp" name="current" type="password" className="in" autoComplete="current-password" required /></div>
+            <div className="f"><label htmlFor="pw">New password (min. 12 characters, mixed case or numbers)</label><input id="pw" name="password" type="password" className="in" minLength={12} autoComplete="new-password" required /></div>
             <button className="btn dark">Change password</button>
+          </form>
+          <div className="box">
+            <h2>2-step login (strongly recommended)</h2>
+            {me?.totpEnabled ? (
+              <form action={disable2fa}>
+                <div className="sub" style={{ marginBottom: 12 }}>On. Login needs your password and a 6-digit code from your authenticator app.</div>
+                <div className="f"><label htmlFor="d1">Password</label><input id="d1" name="current" type="password" className="in" required autoComplete="current-password" /></div>
+                <div className="f"><label htmlFor="d2">Current 6-digit code</label><input id="d2" name="otp" className="in" inputMode="numeric" maxLength={6} required autoComplete="one-time-code" /></div>
+                <button className="btn dark">Turn off 2-step login</button>
+              </form>
+            ) : setup ? (
+              <form action={confirm2fa}>
+                <div className="sub" style={{ marginBottom: 12 }}>Scan this with Google Authenticator, Microsoft Authenticator, Authy or 1Password, then type the 6-digit code it shows.</div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={qr} alt="2-step login QR code" width={220} height={220} style={{ background: '#fff', borderRadius: 12, display: 'block', marginBottom: 10 }} />
+                <div className="sub" style={{ marginBottom: 12 }}>Or enter this key by hand: <b style={{ letterSpacing: 1 }}>{me?.totpSecret}</b></div>
+                <div className="f"><label htmlFor="c1">6-digit code</label><input id="c1" name="otp" className="in" inputMode="numeric" maxLength={6} required autoComplete="one-time-code" /></div>
+                <button className="btn">Turn on 2-step login</button>
+              </form>
+            ) : (
+              <form action={start2fa}>
+                <div className="sub" style={{ marginBottom: 12 }}>Off. With it on, a stolen password alone cannot open the dashboard.</div>
+                <button className="btn">Set up 2-step login</button>
+              </form>
+            )}
+          </div>
+          <form action={logoutEverywhere} className="box">
+            <h2>Sessions</h2>
+            <div className="sub" style={{ marginBottom: 12 }}>Sessions last 8 hours. Use this if you logged in on a shared device.</div>
+            <button className="btn dark">Sign out on all devices</button>
           </form>
         </div>
       </div>

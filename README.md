@@ -84,3 +84,15 @@ Also back up `UPLOAD_DIR`. aaPanel can schedule both under **Cron**.
 - **Admin → Redirects**: 301/302 redirects and a 404 monitor.
 - Notes: `agents.txt` is an emerging, non-enforced convention. IndexNow notifies Bing and others, not Google — submit the sitemap in Google Search Console.
 - Starter guides/articles/FAQs are seeded once (`contentSeeded` setting); deleting them is permanent. Re-running `bash install.sh` is safe.
+
+## Security
+
+Built in: login lockout (5 failed tries per IP or email = 15 min lock), optional 2-step login (authenticator app) in Admin → Settings, 8-hour sessions that are revoked server-side on password change or "sign out everywhere", `__Host-` strict cookie, CSP / HSTS / frame and sniffing protection, same-origin checks on uploads, images re-encoded to WebP (nothing executable is stored), honeypot + rate limits on public forms, app listening on 127.0.0.1 only.
+
+Server side checklist (aaPanel):
+1. Firewall: allow only 22, 80, 443. Do **not** open port 3000 or the database port 5432.
+2. Enable SSL (Let's Encrypt) and "Force HTTPS" on the site.
+3. SSH: key login only, and install fail2ban (aaPanel → Security).
+4. Keep `AUTH_SECRET` (in `.env`) secret and 32+ characters. Turn on 2-step login after your first login.
+5. Back up the database daily (aaPanel → Cron) and keep OS updates on.
+6. Optional: in the site's nginx config restrict `/admin` to your own IP with `allow x.x.x.x; deny all;`.

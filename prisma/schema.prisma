@@ -13,7 +13,18 @@ model AdminUser {
   passwordHash String
   name         String   @default("Admin")
   role         String   @default("owner") // owner | support
+  tokenVersion Int      @default(0)   // bump to sign out every device
+  totpSecret   String   @default("")
+  totpEnabled  Boolean  @default(false)
+  lastTotpStep Int      @default(0)   // blocks re-use of the same 2FA code
   createdAt    DateTime @default(now())
+}
+
+model LoginAttempt {
+  id        Int      @id @default(autoincrement())
+  key       String   // "ip:1.2.3.4" or "email:x@y.z"
+  createdAt DateTime @default(now())
+  @@index([key, createdAt])
 }
 
 model Plan {

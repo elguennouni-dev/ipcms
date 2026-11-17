@@ -3,7 +3,7 @@ import React from 'react';
 export const slugify = (s: string) =>
   s.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
 
-const SAFE_HREF = /^(https?:\/\/|\/|#|mailto:|tel:)/i;
+const SAFE_HREF = /^(https?:\/\/|\/(?!\/)|#|mailto:|tel:)/i;
 const isExternal = (h: string) => /^https?:\/\//i.test(h);
 
 function inline(text: string, base: string): React.ReactNode[] {

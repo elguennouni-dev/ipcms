@@ -4,7 +4,10 @@ export function Saved({ sp }: { sp: { saved?: string; error?: string } }) {
   if (sp.error === 'type') return <div className="er" role="alert">That file is not a valid image.</div>;
   if (sp.error === 'slug') return <div className="er" role="alert">That URL slug is already used by another article.</div>;
   if (sp.error === 'required') return <div className="er" role="alert">Title and slug are required.</div>;
-  if (sp.error === 'pw') return <div className="er" role="alert">Password must be at least 10 characters.</div>;
+  if (sp.error === 'current') return <div className="er" role="alert">Current password is wrong.</div>;
+  if (sp.error === 'otp') return <div className="er" role="alert">That code is not valid. Check the clock on your phone and try the next code.</div>;
+  if (sp.error === '2fa') return <div className="er" role="alert">Password or code is wrong, so 2-step login was not turned off.</div>;
+  if (sp.error === 'pw') return <div className="er" role="alert">Password must be at least 12 characters with lower and upper case letters or numbers.</div>;
   return null;
 }
 export function Head({ title, sub, right }: { title: string; sub: string; right?: React.ReactNode }) {

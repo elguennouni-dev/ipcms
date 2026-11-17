@@ -181,11 +181,9 @@ npm run build
 # 5. Start / reload with PM2
 # ----------------------------------------------------------------------------
 say "Starting the app with PM2 on port $PORT"
-if pm2 describe "$APP_NAME" >/dev/null 2>&1; then
-  PORT="$PORT" pm2 reload "$APP_NAME" --update-env
-else
-  PORT="$PORT" pm2 start ecosystem.config.cjs
-fi
+# restart from the ecosystem file so changed start arguments (listen on 127.0.0.1 only) always apply
+pm2 delete "$APP_NAME" >/dev/null 2>&1 || true
+PORT="$PORT" pm2 start ecosystem.config.cjs
 pm2 save >/dev/null
 pm2 startup systemd -u root --hp /root >/dev/null 2>&1 || true
 

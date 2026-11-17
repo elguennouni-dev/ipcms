@@ -6,7 +6,8 @@ import path from 'path';
 import sharp from 'sharp';
 import bcrypt from 'bcryptjs';
 import { db } from '@/lib/db';
-import { getSession, login, logout, requireAdmin } from '@/lib/auth';
+import { getSession, login, logout, requireAdmin, startSession } from '@/lib/auth';
+import { newSecret, verifyTotp } from '@/lib/totp';
 import { saveSettings, getSettings, getIndexNowKey, pingIndexNow, siteUrl } from '@/lib/settings';
 import { slugify } from '@/lib/markdown';
 import { analyze } from '@/lib/seo';
@@ -17,8 +18,9 @@ const done = (to: string): never => redirect(`${to}${to.includes('?') ? '&' : '?
 
 /* ---------- auth ---------- */
 export async function loginAction(fd: FormData) {
-  const ok = await login(s(fd, 'email'), String(fd.get('password') ?? ''));
-  if (!ok) redirect('/admin/login?error=1');
+  const r = await login(s(fd, 'email'), String(fd.get('password') ?? ''), s(fd, 'otp'));
+  if (r === 'locked') redirect('/admin/login?error=locked');
+  if (r !== 'ok') redirect('/admin/login?error=1');
   redirect('/admin');
 }
 export async function logoutAction() {
@@ -28,8 +30,40 @@ export async function logoutAction() {
 export async function changePassword(fd: FormData) {
   const sess = await requireAdmin();
   const pw = String(fd.get('password') ?? '');
-  if (pw.length < 10) redirect('/admin/settings?error=pw');
-  await db.adminUser.update({ where: { id: sess.uid }, data: { passwordHash: await bcrypt.hash(pw, 12) } });
+  const user = await db.adminUser.findUnique({ where: { id: sess.uid } });
+  if (!user || !(await bcrypt.compare(String(fd.get('current') ?? ''), user.passwordHash))) redirect('/admin/settings?error=current');
+  if (pw.length < 12 || !/[a-z]/.test(pw) || !/[A-Z0-9]/.test(pw)) redirect('/admin/settings?error=pw');
+  const u = await db.adminUser.update({ where: { id: sess.uid }, data: { passwordHash: await bcrypt.hash(pw, 12), tokenVersion: { increment: 1 } } });
+  await startSession(u.id, u.role, u.tokenVersion); // every other device is signed out
+  done('/admin/settings');
+}
+export async function logoutEverywhere() {
+  const sess = await requireAdmin();
+  await db.adminUser.update({ where: { id: sess.uid }, data: { tokenVersion: { increment: 1 } } });
+  await logout();
+  redirect('/admin/login');
+}
+export async function start2fa() {
+  const sess = await requireAdmin();
+  await db.adminUser.update({ where: { id: sess.uid }, data: { totpSecret: newSecret(), totpEnabled: false, lastTotpStep: 0 } });
+  redirect('/admin/settings?setup2fa=1');
+}
+export async function confirm2fa(fd: FormData) {
+  const sess = await requireAdmin();
+  const u = await db.adminUser.findUnique({ where: { id: sess.uid } });
+  const step = u && u.totpSecret ? verifyTotp(u.totpSecret, s(fd, 'otp')) : null;
+  if (!u || step === null) redirect('/admin/settings?setup2fa=1&error=otp');
+  await db.adminUser.update({ where: { id: sess.uid }, data: { totpEnabled: true, lastTotpStep: step!, tokenVersion: { increment: 1 } } });
+  const n = await db.adminUser.findUnique({ where: { id: sess.uid } });
+  await startSession(n!.id, n!.role, n!.tokenVersion);
+  done('/admin/settings');
+}
+export async function disable2fa(fd: FormData) {
+  const sess = await requireAdmin();
+  const u = await db.adminUser.findUnique({ where: { id: sess.uid } });
+  const ok = !!u && (await bcrypt.compare(String(fd.get('current') ?? ''), u.passwordHash)) && verifyTotp(u.totpSecret, s(fd, 'otp'), u.lastTotpStep) !== null;
+  if (!ok) redirect('/admin/settings?error=2fa');
+  await db.adminUser.update({ where: { id: sess.uid }, data: { totpEnabled: false, totpSecret: '' } });
   done('/admin/settings');
 }
 

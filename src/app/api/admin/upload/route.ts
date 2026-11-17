@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
+import { getSession, sameOrigin } from '@/lib/auth';
 import { saveImage } from '@/lib/upload';
 
 export const dynamic = 'force-dynamic';
 
 /** Used by the article editor to upload inline images. Admin only. */
 export async function POST(req: NextRequest) {
+  if (!(await sameOrigin())) return NextResponse.json({ error: 'Bad origin' }, { status: 403 });
   if (!(await getSession())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const fd = await req.formData();
   const file = fd.get('file');
