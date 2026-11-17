@@ -64,6 +64,10 @@ command -v pm2 >/dev/null || { say "Installing PM2"; npm install -g pm2 >/dev/nu
 # 2. Get / update the code (works in a non-empty aaPanel folder)
 # ----------------------------------------------------------------------------
 cd "$APP_DIR"
+# aaPanel folders are owned by another user; tell git this folder is fine
+git config --global --add safe.directory "$APP_DIR" 2>/dev/null || true
+# a half-created .git (no origin) from an earlier failed run is treated as fresh
+if [ -d .git ] && ! git remote get-url origin >/dev/null 2>&1; then rm -rf .git; fi
 if [ ! -d .git ]; then
   say "Downloading project into $APP_DIR"
   git init -q
