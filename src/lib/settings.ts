@@ -47,7 +47,7 @@ export const DEFAULTS: Record<string, string> = {
   indexnowKey: ''
 };
 
-export const getSettings = unstable_cache(
+const cachedSettings = unstable_cache(
   async () => {
     const rows = await db.setting.findMany();
     const map: Record<string, string> = { ...DEFAULTS };
@@ -57,6 +57,8 @@ export const getSettings = unstable_cache(
   ['settings'],
   { tags: ['settings'] }
 );
+// DEFAULTS merged again so a cache written by an older version never lacks new keys
+export const getSettings = async (): Promise<Record<string, string>> => ({ ...DEFAULTS, ...(await cachedSettings()) });
 
 export async function saveSettings(values: Record<string, string>) {
   for (const [key, value] of Object.entries(values)) {
@@ -68,10 +70,11 @@ export async function saveSettings(values: Record<string, string>) {
 export const siteUrl = () => (process.env.SITE_URL || 'http://localhost:3000').replace(/\/$/, '');
 
 export async function getIndexNowKey() {
-  const s = await getSettings();
-  if (s.indexnowKey) return s.indexnowKey;
+  // read straight from the DB and never revalidate here: this runs during page render
+  const row = await db.setting.findUnique({ where: { key: 'indexnowKey' } });
+  if (row?.value) return row.value;
   const key = Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
-  await saveSettings({ indexnowKey: key });
+  await db.setting.upsert({ where: { key: 'indexnowKey' }, update: { value: key }, create: { key: 'indexnowKey', value: key } });
   return key;
 }
 

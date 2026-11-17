@@ -39,36 +39,41 @@ export const getMedia = unstable_cache(
   { tags: ['media'] }
 );
 
-export const getLegalPages = unstable_cache(
+// unstable_cache stores JSON, so Date fields come back as strings: restore them.
+const ISO = /^\d{4}-\d\d-\d\dT/;
+export const dates = <T,>(x: T): T => JSON.parse(JSON.stringify(x ?? null), (k, v) => (typeof v === 'string' && /At$/.test(k) && ISO.test(v) ? new Date(v) : v));
+
+const _legalPages = unstable_cache(
   async () => db.legalPage.findMany({ orderBy: { id: 'asc' } }),
   ['legal'],
   { tags: ['legal'] }
 );
+export const getLegalPages = async () => dates(await _legalPages());
 
-export const getLegalPage = (slug: string) =>
-  unstable_cache(async () => db.legalPage.findUnique({ where: { slug } }), ['legal', slug], { tags: ['legal'] })();
+export const getLegalPage = async (slug: string) =>
+  dates(await unstable_cache(async () => db.legalPage.findUnique({ where: { slug } }), ['legal', slug], { tags: ['legal'] })());
 
 export const mediaUrl = (m?: { file: string; v: number }) => (m ? `/media/${m.file}?v=${m.v}` : null);
 
 /* ---------- posts (blog + guides) ---------- */
 const publishedWhere = () => ({ status: 'published', publishedAt: { lte: new Date() } });
 
-export const getPosts = (type: string, take = 60) =>
-  unstable_cache(
+export const getPosts = async (type: string, take = 60) =>
+  dates(await unstable_cache(
     async () => db.post.findMany({ where: { type, ...publishedWhere() }, orderBy: { publishedAt: 'desc' }, take }),
     ['posts', type, String(take)],
     { tags: ['posts'], revalidate: 300 }
-  )();
+  )());
 
-export const getPost = (type: string, slug: string) =>
-  unstable_cache(
+export const getPost = async (type: string, slug: string) =>
+  dates(await unstable_cache(
     async () => db.post.findFirst({ where: { type, slug, ...publishedWhere() } }),
     ['post', type, slug],
     { tags: ['posts'], revalidate: 300 }
-  )();
+  )());
 
-export const getRelated = (type: string, slug: string, category: string) =>
-  unstable_cache(
+export const getRelated = async (type: string, slug: string, category: string) =>
+  dates(await unstable_cache(
     async () => {
       const same = category ? await db.post.findMany({ where: { type, slug: { not: slug }, category, ...publishedWhere() }, orderBy: { publishedAt: 'desc' }, take: 3 }) : [];
       if (same.length >= 3) return same;
@@ -77,10 +82,11 @@ export const getRelated = (type: string, slug: string, category: string) =>
     },
     ['related', type, slug],
     { tags: ['posts'], revalidate: 300 }
-  )();
+  )());
 
-export const allPublished = unstable_cache(
+const _allPublished = unstable_cache(
   async () => db.post.findMany({ where: publishedWhere(), orderBy: { publishedAt: 'desc' }, select: { type: true, slug: true, title: true, excerpt: true, updatedAt: true, publishedAt: true, noindex: true, coverFile: true, seoDescription: true } }),
   ['all-posts'],
   { tags: ['posts'], revalidate: 300 }
 );
+export const allPublished = async () => dates(await _allPublished());
