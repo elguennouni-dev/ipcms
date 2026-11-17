@@ -2,7 +2,7 @@
 
 SEO-first website + custom CMS for a UK streaming-subscription reseller.
 
-- **Stack:** Next.js 15 (App Router, server-rendered HTML) · TypeScript · Prisma · **MySQL** · sharp (image optimisation)
+- **Stack:** Next.js 15 (App Router, server-rendered HTML) · TypeScript · Prisma · **PostgreSQL** · sharp (image optimisation)
 - **Public site:** home page with plans, 24h free trial, order form (stored in DB, WhatsApp ordering), legal pages incl. DMCA, sitemap.xml, robots.txt, JSON-LD (Organization, WebSite, FAQ, Product offers), cookie consent (GA4 loads only after consent).
 - **Admin CMS** (`/admin`): orders, plans & prices, show/hide/reorder sections, hero text, FAQ, reviews, media library (auto WebP), legal pages + DMCA inbox, SEO & analytics, settings, PayPal switch (off by default).
 
@@ -17,7 +17,7 @@ npm run dev                 # http://localhost:3000  ·  admin: /admin
 
 ## Deploy on your VPS with aaPanel (Ubuntu)
 
-1. **aaPanel → App Store**: install *Nginx*, *MySQL*, *Node.js version manager* (Node 20 or 22) and *PM2 manager*.
+1. **aaPanel → App Store**: install *Nginx*, *PostgreSQL*, *Node.js version manager* (Node 20 or 22) and *PM2 manager*.
 2. **Database → Add database**: name `ipcms`, user `ipcms`, set a password. Copy it.
 3. **Website → Add site** with your domain (PHP: pure static). Then **SSL → Let's Encrypt** (force HTTPS).
 4. **SSH into the server** and clone the repo:
@@ -39,7 +39,7 @@ npm run dev                 # http://localhost:3000  ·  admin: /admin
 
 | Variable | Meaning |
 |---|---|
-| `DATABASE_URL` | `mysql://ipcms:PASSWORD@127.0.0.1:3306/ipcms` |
+| `DATABASE_URL` | `postgresql://ipcms:PASSWORD@127.0.0.1:5432/ipcms?schema=public` |
 | `SITE_URL` | `https://yourdomain.co.uk` (canonical URLs, sitemap, Open Graph) |
 | `AUTH_SECRET` | long random string: `openssl rand -hex 32` |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | first admin account (created by the seed) |
@@ -58,7 +58,7 @@ That pulls, installs, syncs the DB schema (never drops data), rebuilds and reloa
 ### Backups
 
 ```bash
-mysqldump -u ipcms -p ipcms > backup-$(date +%F).sql
+pg_dump -U ipcms -h 127.0.0.1 ipcms > backup-$(date +%F).sql
 ```
 Also back up `UPLOAD_DIR`. aaPanel can schedule both under **Cron**.
 

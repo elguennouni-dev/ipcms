@@ -89,33 +89,41 @@ FIRST_RUN=0; [ -f .installed ] || FIRST_RUN=1
 ADMIN_PASSWORD_SHOWN=""
 if [ ! -f .env ]; then
   say "Configuration"
-  echo "Create the database first in aaPanel -> Database -> Add database (or let me try below)."
+  echo "PostgreSQL connection. I can create the database and user for you."
   DB_NAME="$(ask 'Database name' ipcms)"
   DB_USER="$(ask 'Database user' ipcms)"
-  DB_PASS="$(ask_secret 'Database password')"
+  DB_PASS="$(ask_secret 'Database password (choose one; letters/numbers)')"
+  [ -n "$DB_PASS" ] || die "The database password cannot be empty."
   DB_HOST="$(ask 'Database host' 127.0.0.1)"
-  DB_PORT="$(ask 'Database port' 3306)"
+  DB_PORT="$(ask 'Database port' 5432)"
 
-  if command -v mysql >/dev/null; then
-    if ! MYSQL_PWD="$DB_PASS" mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -e "USE \`$DB_NAME\`" >/dev/null 2>&1; then
-      warn "Cannot connect with that user/database."
-      if [ "$(ask 'Try to create them with the MySQL root password? (y/n)' y)" = "y" ]; then
-        ROOT_PASS="$(ask_secret 'MySQL root password (aaPanel -> Database -> Root password)')"
-        MYSQL_PWD="$ROOT_PASS" mysql -h "$DB_HOST" -P "$DB_PORT" -u root <<SQL || die "Could not create the database. Create it in aaPanel and run again."
-CREATE DATABASE IF NOT EXISTS \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER IF NOT EXISTS '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASS';
-CREATE USER IF NOT EXISTS '$DB_USER'@'127.0.0.1' IDENTIFIED BY '$DB_PASS';
-GRANT ALL PRIVILEGES ON \`$DB_NAME\`.* TO '$DB_USER'@'localhost';
-GRANT ALL PRIVILEGES ON \`$DB_NAME\`.* TO '$DB_USER'@'127.0.0.1';
-FLUSH PRIVILEGES;
-SQL
-        say "Database ready"
-      fi
+  if ! command -v psql >/dev/null || ! (ss -ltn 2>/dev/null | grep -q ":$DB_PORT "); then
+    warn "PostgreSQL does not seem to be installed/running on this server."
+    if [ "$(ask 'Install PostgreSQL now with apt? (y/n)' y)" = "y" ]; then
+      apt-get update -y >/dev/null && apt-get install -y postgresql postgresql-contrib >/dev/null
+      systemctl enable --now postgresql >/dev/null 2>&1 || service postgresql start || true
+      sleep 3
     else
-      say "Database connection OK"
+      die "Install PostgreSQL (aaPanel App Store, or apt install postgresql) and run again."
     fi
+  fi
+
+  if [ "$DB_HOST" = "127.0.0.1" ] || [ "$DB_HOST" = "localhost" ]; then
+    say "Creating database and user (if missing)"
+    PSQL=(runuser -u postgres -- psql -v ON_ERROR_STOP=1 -tA)
+    if [ "$("${PSQL[@]}" -c "SELECT 1 FROM pg_roles WHERE rolname='${DB_USER}'" 2>/dev/null || true)" = "1" ]; then
+      "${PSQL[@]}" -c "ALTER ROLE \"${DB_USER}\" WITH LOGIN PASSWORD '${DB_PASS}'" >/dev/null 2>&1 || warn "Could not update the role password."
+    else
+      "${PSQL[@]}" -c "CREATE ROLE \"${DB_USER}\" WITH LOGIN PASSWORD '${DB_PASS}'" >/dev/null 2>&1 || warn "Could not create the role automatically."
+    fi
+    if [ "$("${PSQL[@]}" -c "SELECT 1 FROM pg_database WHERE datname='${DB_NAME}'" 2>/dev/null || true)" != "1" ]; then
+      "${PSQL[@]}" -c "CREATE DATABASE \"${DB_NAME}\" OWNER \"${DB_USER}\"" >/dev/null 2>&1 || warn "Could not create the database automatically - create it in aaPanel with owner ${DB_USER}."
+    fi
+  fi
+  if PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -tAc "SELECT 1" >/dev/null 2>&1; then
+    say "Database connection OK"
   else
-    warn "mysql client not found - skipping the connection test."
+    die "Cannot connect to PostgreSQL with those details. Create the database/user (aaPanel -> Database) and run again."
   fi
 
   SITE_URL="$(ask 'Public site URL' "https://$DOMAIN")"
@@ -130,7 +138,7 @@ SQL
 
   mkdir -p "$UPLOADS_DIR"
   cat > .env <<EOF
-DATABASE_URL="mysql://${DB_USER}:${ENC_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+DATABASE_URL="postgresql://${DB_USER}:${ENC_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}?schema=public"
 SITE_URL="${SITE_URL}"
 AUTH_SECRET="${AUTH_SECRET}"
 ADMIN_EMAIL="${ADMIN_EMAIL}"

@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -92,7 +92,7 @@ model LegalPage {
   id        Int      @id @default(autoincrement())
   slug      String   @unique // terms, privacy, refunds, dmca, cookies, contact
   title     String
-  body      String   @db.LongText // simple markdown-like text
+  body      String   @db.Text // simple markdown-like text
   updatedAt DateTime @updatedAt
 }
 
