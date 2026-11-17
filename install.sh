@@ -75,14 +75,13 @@ if [ ! -d .git ]; then
   git fetch --depth 1 origin "$BRANCH"
   git checkout -q -f -B "$BRANCH" "origin/$BRANCH"
   git branch --set-upstream-to="origin/$BRANCH" "$BRANCH" >/dev/null 2>&1 || true
-  FIRST_RUN=1
 else
   say "Updating code from GitHub"
   git fetch --depth 1 origin "$BRANCH"
   git reset -q --hard "origin/$BRANCH"
-  FIRST_RUN=0
 fi
-[ -f .env ] || FIRST_RUN=1
+# the first-run marker is only written after tables + seed succeeded
+FIRST_RUN=0; [ -f .installed ] || FIRST_RUN=1
 
 # ----------------------------------------------------------------------------
 # 3. Configuration (.env) - only asked once
@@ -158,6 +157,7 @@ npm ci --no-audit --no-fund
 if [ "$FIRST_RUN" -eq 1 ]; then
   say "Creating tables and seeding (admin, plans, sections, legal templates)"
   npm run setup
+  touch .installed
 else
   say "Syncing database schema (non-destructive)"
   npx prisma db push --skip-generate
