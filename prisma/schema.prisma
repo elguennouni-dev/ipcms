@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model AdminUser {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  name         String   @default("Admin")
+  role         String   @default("owner") // owner | support
+  createdAt    DateTime @default(now())
+}
+
+model Plan {
+  id        Int      @id @default(autoincrement())
+  slug      String   @unique // 1m, 3m, 6m, 12m
+  name      String
+  months    Int
+  price     Decimal  @db.Decimal(8, 2)
+  badge     String   @default("")
+  features  String   @db.Text // one feature per line
+  visible   Boolean  @default(true)
+  sort      Int      @default(0)
+}
+
+model Order {
+  id        Int      @id @default(autoincrement())
+  name      String
+  whatsapp  String
+  email     String   @default("")
+  planSlug  String   // trial | 1m | 3m | ...
+  planName  String
+  source    String   @default("form") // form | whatsapp
+  status    String   @default("New") // New | Contacted | Active | Done
+  note      String   @default("") @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Section {
+  id      Int     @id @default(autoincrement())
+  key     String  @unique
+  name    String
+  descr   String  @default("")
+  visible Boolean @default(true)
+  sort    Int     @default(0)
+}
+
+model Setting {
+  key   String @id
+  value String @db.Text
+}
+
+model FaqItem {
+  id       Int     @id @default(autoincrement())
+  question String
+  answer   String  @db.Text
+  visible  Boolean @default(true)
+  sort     Int     @default(0)
+}
+
+model Review {
+  id      Int     @id @default(autoincrement())
+  author  String
+  text    String  @db.Text
+  rating  Int     @default(5)
+  visible Boolean @default(true)
+  sort    Int     @default(0)
+}
+
+model Media {
+  id        Int      @id @default(autoincrement())
+  slot      String   // hero, sport-banner, device, logo, og, channel-1.., poster-1..
+  label     String
+  file      String   @default("") // stored filename (webp)
+  alt       String   @default("")
+  width     Int      @default(0)
+  height    Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@unique([slot])
+}
+
+model LegalPage {
+  id        Int      @id @default(autoincrement())
+  slug      String   @unique // terms, privacy, refunds, dmca, cookies, contact
+  title     String
+  body      String   @db.LongText // simple markdown-like text
+  updatedAt DateTime @updatedAt
+}
+
+model DmcaNotice {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  work      String   @db.Text
+  location  String   @db.Text
+  signature String
+  status    String   @default("Open") // Open | Reviewing | Resolved
+  createdAt DateTime @default(now())
+}
