@@ -23,13 +23,13 @@ export function OrderForm({ plans, trial, whatsapp, defaultPlan }: { plans: P[];
   return (
     <div className="order">
       <div className="a">
-        <div className="eyebrow" style={{ color: '#C7C4FF' }}>Order</div>
+        <div className="eyebrow" style={{ color: '#BCD0FF' }}>Order</div>
         <h2 className="h2" style={{ fontSize: 40 }}>Tell us where to send your details</h2>
-        <p style={{ margin: '18px 0 0', color: '#D6D3FF' }}>Two fields and you are done. We will message you on WhatsApp within minutes.</p>
+        <p style={{ margin: '18px 0 0', color: '#CFDCFF' }}>Two fields and you are done. We will message you on WhatsApp within minutes.</p>
         <div className="sel">
-          <div style={{ fontSize: 13, color: '#C7C4FF' }}>Your selection</div>
+          <div style={{ fontSize: 13, color: '#BCD0FF' }}>Your selection</div>
           <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontWeight: 700, fontSize: 26 }}>{cur?.slug === 'trial' ? '24-Hour Free Trial' : cur?.name}</div>
-          <div style={{ color: '#E6E4FF' }}>{cur?.slug === 'trial' ? 'Free for 24 hours' : `£${cur?.price}`}</div>
+          <div style={{ color: '#E4ECFF' }}>{cur?.slug === 'trial' ? 'Free for 24 hours' : `£${cur?.price}`}</div>
         </div>
       </div>
       <div className="b">

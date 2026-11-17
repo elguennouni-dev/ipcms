@@ -5,7 +5,7 @@ import { getMedia, mediaUrl } from '@/lib/data';
 
 export const dynamic = 'force-dynamic';
 
-export const viewport: Viewport = { themeColor: '#0A0B10', width: 'device-width', initialScale: 1 };
+export const viewport: Viewport = { themeColor: '#050E2B', width: 'device-width', initialScale: 1 };
 
 export async function generateMetadata(): Promise<Metadata> {
   const s = await getSettings();
@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
     verification: token ? { google: token } : undefined,
     openGraph: {
       type: 'website', locale: 'en_GB', siteName: s.siteName, title: s.seoTitle, description: s.seoDescription, url: '/',
-      images: og ? [{ url: og, width: 1200, height: 630 }] : undefined
+      images: [{ url: og || '/brand/og-default.png', width: 1200, height: 630 }]
     },
     twitter: { card: 'summary_large_image', title: s.seoTitle, description: s.seoDescription }
   };

@@ -15,7 +15,7 @@ export default async function Legal({ searchParams }: { searchParams: Promise<Re
         <div className="box" style={{ padding: 0, overflow: 'hidden' }}>
           <h2 style={{ padding: '18px 22px', margin: 0, borderBottom: '1px solid #E3E5EF' }}>Legal pages</h2>
           {pages.map((p) => (
-            <Link key={p.slug} href={`/admin/legal?page=${p.slug}`} style={{ display: 'flex', alignItems: 'center', gap: 12, minHeight: 60, padding: '0 22px', borderTop: '1px solid #ECEEF5', background: cur?.slug === p.slug ? '#F3F0FF' : '#fff' }}>
+            <Link key={p.slug} href={`/admin/legal?page=${p.slug}`} style={{ display: 'flex', alignItems: 'center', gap: 12, minHeight: 60, padding: '0 22px', borderTop: '1px solid #ECEEF5', background: cur?.slug === p.slug ? '#EAF0FF' : '#fff' }}>
               <span style={{ flex: 1 }}><b>{p.title}</b><div className="sub">/legal/{p.slug} · updated {p.updatedAt.toLocaleDateString('en-GB')}</div></span>
             </Link>
           ))}

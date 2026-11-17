@@ -10,9 +10,9 @@ export const dynamic = 'force-dynamic';
 
 const TILES = [
   ['#1E3A8A,#0B1230', '#BFD0FF', 'SPORT', 'Live matches'], ['#7C2D6B,#220B1E', '#F5C2E8', 'MOVIES', 'Blockbusters'], ['#0F766E,#04201E', '#A7F3E6', 'SERIES', 'Box sets'],
-  ['#B45309,#2A1203', '#FFD9A8', 'KIDS', 'Family time'], ['#4338CA,#12103A', '#C7C4FF', 'NEWS', '24/7 channels'], ['#9F1239,#2B0612', '#FFC0CF', 'DOCS', 'Discover']
+  ['#B45309,#2A1203', '#FFD9A8', 'KIDS', 'Family time'], ['#0B3FB3,#071A5C', '#BCD0FF', 'NEWS', '24/7 channels'], ['#9F1239,#2B0612', '#FFC0CF', 'DOCS', 'Discover']
 ];
-const GRADS = ['#1E3A8A,#0B1230', '#7C2D6B,#220B1E', '#0F766E,#04201E', '#B45309,#2A1203', '#4338CA,#12103A', '#9F1239,#2B0612', '#0E7490,#06212A', '#6D28D9,#1B0B3D', '#15803D,#052E16', '#BE185D,#2D0A1B', '#475569,#0F172A', '#A16207,#271903'];
+const GRADS = ['#1E3A8A,#0B1230', '#7C2D6B,#220B1E', '#0F766E,#04201E', '#B45309,#2A1203', '#0B3FB3,#071A5C', '#9F1239,#2B0612', '#0E7490,#06212A', '#1D4ED8,#0A1B4D', '#15803D,#052E16', '#BE185D,#2D0A1B', '#475569,#0F172A', '#A16207,#271903'];
 const FEATURES = [
   ['Sharp HD & 4K', 'Stable, high-quality streams tuned for big screens and fast UK broadband.', 'M3 4h18v12H3zM8 20h8M12 16v4'],
   ['Works on every device', 'Smart TVs, Fire Stick, Android, iPhone, iPad, MAG boxes and more.', 'M7 2h10v20H7zM11 18h2'],
@@ -70,7 +70,7 @@ export default async function Home() {
         <div className="grid" style={{ marginTop: 48 }}>
           {FEATURES.map(([t, d, p]) => (
             <div className="card" key={t}>
-              <div className="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A894FF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={p} /></svg></div>
+              <div className="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7FA6FF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={p} /></svg></div>
               <h3>{t}</h3><p>{d}</p>
             </div>
           ))}
@@ -188,7 +188,7 @@ export default async function Home() {
   };
 
   const ld = [
-    { '@context': 'https://schema.org', '@type': 'Organization', name: s.siteName, url, email: s.supportEmail },
+    { '@context': 'https://schema.org', '@type': 'Organization', name: s.siteName, url, logo: `${url}/brand/logo.png`, email: s.supportEmail },
     { '@context': 'https://schema.org', '@type': 'WebSite', name: s.siteName, url },
     ...(faqs.length ? [{ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faqs.map((f) => ({ '@type': 'Question', name: f.question, acceptedAnswer: { '@type': 'Answer', text: f.answer } })) }] : []),
     ...(plans.length ? [{

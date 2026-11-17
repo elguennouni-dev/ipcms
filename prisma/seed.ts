@@ -142,7 +142,7 @@ async function main() {
     ['hero', 'Hero image (optional)'],
     ['sport-banner', 'Live sport banner (1200x340)'],
     ['devices', 'Devices image (1000x625)'],
-    ['logo', 'Logo (square, 512x512)'],
+    ['logo', 'Logo override (wide, ~900x300, transparent PNG/WebP)'],
     ['og', 'Social share image (1200x630)']
   ];
   for (let i = 1; i <= 12; i++) slots.push([`channel-${i}`, `Channel logo ${i} (320x200)`]);

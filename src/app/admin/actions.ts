@@ -124,7 +124,7 @@ export async function deleteReview(fd: FormData) {
 }
 
 /* ---------- media ---------- */
-const MAX_W: Record<string, number> = { hero: 1400, 'sport-banner': 1600, devices: 1400, logo: 512, og: 1200 };
+const MAX_W: Record<string, number> = { hero: 1400, 'sport-banner': 1600, devices: 1400, logo: 900, og: 1200 };
 function maxWidth(slot: string) {
   return MAX_W[slot] ?? (slot.startsWith('poster') ? 600 : 400);
 }

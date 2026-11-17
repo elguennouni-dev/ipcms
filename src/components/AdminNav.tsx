@@ -13,7 +13,11 @@ export function AdminNav({ newOrders, dmcaOpen, siteName }: { newOrders: number;
   const path = usePathname();
   return (
     <aside>
-      <div className="logo"><i style={{ width: 32, height: 32, borderRadius: 10, background: 'var(--ac)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>▶</i>{siteName} CMS</div>
+      <Link href="/admin" className="plate" aria-label={`${siteName} admin`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/logo.png" alt={siteName} />
+      </Link>
+      <div style={{ padding: '0 14px 8px', fontSize: 12, color: '#7C8BC4', letterSpacing: '.1em', fontWeight: 600 }}>CMS</div>
       <nav aria-label="Admin">
         {items.map(([href, label, group]) => {
           const on = href === '/admin' ? path === '/admin' : path.startsWith(href);

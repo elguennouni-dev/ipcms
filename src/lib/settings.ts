@@ -2,10 +2,10 @@ import { unstable_cache, revalidateTag } from 'next/cache';
 import { db } from './db';
 
 export const DEFAULTS: Record<string, string> = {
-  siteName: 'Aurora TV',
+  siteName: 'UK Channel TV',
   whatsapp: '447000000000',
-  supportEmail: 'support@example.co.uk',
-  dmcaEmail: 'dmca@example.co.uk',
+  supportEmail: 'support@ukchanneltv.com',
+  dmcaEmail: 'dmca@ukchanneltv.com',
   companyName: '[Your Company Ltd]',
   companyNumber: '[00000000]',
   heroTitle: 'Every screen. Every game. One subscription.',
@@ -18,7 +18,7 @@ export const DEFAULTS: Record<string, string> = {
   whatsappFloat: '1',
   statChannels: '[00,000]+',
   statVod: '[00,000]+',
-  seoTitle: 'Aurora TV | Premium UK Streaming Subscriptions',
+  seoTitle: 'UK Channel TV | Premium UK Streaming Subscriptions',
   seoDescription: 'Live TV, sport, films and series in HD and 4K. Flexible monthly to 12-month plans and a 24-hour free trial.',
   gscVerification: '',
   ga4: '',

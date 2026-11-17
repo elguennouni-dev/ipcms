@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { getSettings } from '@/lib/settings';
 import { getLegalPages, getMedia, mediaUrl } from '@/lib/data';
 import { CookieConsent } from '@/components/CookieConsent';
-import { Play, WaIcon } from '@/components/Icons';
+import { WaIcon } from '@/components/Icons';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,27 +12,29 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   return (
     <>
       {s.announceEnabled === '1' && s.announceText && <div className="announce">{s.announceText}</div>}
-      <div className="wrap">
-        <header className="hdr">
-          <Link href="/" className="logo" aria-label={s.siteName}>
-            {logo ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={logo} alt="" /> : <i><Play /></i>}
-            {s.siteName}
-          </Link>
-          <nav className="nav" aria-label="Main">
-            <Link href="/#features">Features</Link>
-            <Link href="/#plans">Plans</Link>
-            <Link href="/#how">How it works</Link>
-            <Link href="/#faq">FAQ</Link>
-          </nav>
-          <Link href="/#order" className="btn sm light">Get started</Link>
-        </header>
+      <div className="hdrbar">
+        <div className="wrap">
+          <header className="hdr">
+            <Link href="/" aria-label={s.siteName}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={logo || '/brand/logo.png'} alt={s.siteName} className="brandlogo" width={171} height={56} />
+            </Link>
+            <nav className="nav" aria-label="Main">
+              <Link href="/#features">Features</Link>
+              <Link href="/#plans">Plans</Link>
+              <Link href="/#how">How it works</Link>
+              <Link href="/#faq">FAQ</Link>
+            </nav>
+            <Link href="/#order" className="btn sm">Get started</Link>
+          </header>
+        </div>
       </div>
       {children}
       <footer className="ftr">
         <div className="wrap">
           <div className="cols">
             <div style={{ maxWidth: 380 }}>
-              <div className="logo" style={{ fontSize: 20 }}>{s.siteName}</div>
+              <span className="plate"><img src={logo || '/brand/logo.png'} alt={s.siteName} loading="lazy" /></span>
               <p className="muted" style={{ fontSize: 14, margin: '10px 0 0' }}>Authorised reseller of licensed streaming subscriptions for customers in the United Kingdom. Content availability varies by plan and region.</p>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 48 }}>
