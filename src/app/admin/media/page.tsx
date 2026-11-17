@@ -26,7 +26,7 @@ export default async function MediaPage({ searchParams }: { searchParams: Promis
                 </div>
                 <form action={uploadMedia} encType="multipart/form-data">
                   <input type="hidden" name="slot" value={r.slot} />
-                  <b>{r.label}</b>
+                  <b>{r.slot === 'hero' ? 'Hero background photo (optional; replaces the animated scene)' : r.label}</b>
                   <input type="file" name="file" accept="image/png,image/jpeg,image/webp,image/avif" aria-label={`Upload ${r.label}`} style={{ fontSize: 12 }} />
                   <input name="alt" className="in" placeholder="Alt text (for SEO & accessibility)" defaultValue={r.alt} aria-label="Alt text" style={{ minHeight: 40 }} />
                   <div className="row2"><button className="btn" style={{ minHeight: 40 }}>Save</button>{r.file && <button className="btn out" style={{ minHeight: 40 }} formAction={removeMedia}>Remove</button>}</div>

@@ -4,14 +4,11 @@ import { getFaqs, getMedia, getPlans, getReviews, getSections } from '@/lib/data
 import { Slot } from '@/components/Slot';
 import { PlanPick } from '@/components/PlanPick';
 import { OrderForm } from '@/components/OrderForm';
-import { Check, ImgIcon } from '@/components/Icons';
+import { Check } from '@/components/Icons';
+import { HeroScene } from '@/components/HeroScene';
 
 export const dynamic = 'force-dynamic';
 
-const TILES = [
-  ['#1E3A8A,#0B1230', '#BFD0FF', 'SPORT', 'Live matches'], ['#7C2D6B,#220B1E', '#F5C2E8', 'MOVIES', 'Blockbusters'], ['#0F766E,#04201E', '#A7F3E6', 'SERIES', 'Box sets'],
-  ['#B45309,#2A1203', '#FFD9A8', 'KIDS', 'Family time'], ['#0B3FB3,#071A5C', '#BCD0FF', 'NEWS', '24/7 channels'], ['#9F1239,#2B0612', '#FFC0CF', 'DOCS', 'Discover']
-];
 const GRADS = ['#1E3A8A,#0B1230', '#7C2D6B,#220B1E', '#0F766E,#04201E', '#B45309,#2A1203', '#0B3FB3,#071A5C', '#9F1239,#2B0612', '#0E7490,#06212A', '#1D4ED8,#0A1B4D', '#15803D,#052E16', '#BE185D,#2D0A1B', '#475569,#0F172A', '#A16207,#271903'];
 const FEATURES = [
   ['Sharp HD & 4K', 'Stable, high-quality streams tuned for big screens and fast UK broadband.', 'M3 4h18v12H3zM8 20h8M12 16v4'],
@@ -30,27 +27,32 @@ export default async function Home() {
 
   const blocks: Record<string, React.ReactNode> = {
     hero: (
-      <section className="wrap hero" id="top">
-        <div className="l">
+      <section className="herox" id="top">
+        {media['hero'] ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="hx-photo" src={`/media/${media['hero'].file}?v=${media['hero'].v}`} alt="" fetchPriority="high" />
+            <div className="hx-shade" />
+          </>
+        ) : (
+          <HeroScene />
+        )}
+        <div className="in">
           <div className="pill"><b />Authorised reseller · Serving the United Kingdom</div>
-          <h1>{s.heroTitle}</h1>
+          <h1>
+            {s.heroTitle.split(/(?<=[.!?])\s+/).map((part, i, arr) => (
+              <span key={i} className={`ln${i === arr.length - 1 && arr.length > 1 ? ' hl' : ''}`}>{part}</span>
+            ))}
+          </h1>
           <p className="lead">{s.heroSub}</p>
-          <div className="row" style={{ marginTop: 36 }}>
+          <div className="row">
             <PlanPick slug="trial" label={s.heroCta} className="btn" />
             <Link href="#plans" className="btn ghost">View plans</Link>
           </div>
           <div className="ticks"><span><Check />No account needed</span><span><Check />Set up over WhatsApp</span><span><Check />Friendly UK support</span></div>
         </div>
-        <div className="r">
-          {media['hero'] ? (
-            <Slot media={media} slot="hero" label="Hero" style={{ aspectRatio: '4/3', borderRadius: 28 }} priority />
-          ) : (
-            <div className="frame"><div className="tiles">
-              {TILES.map((t, i) => (
-                <div key={i} className="tile" style={{ background: `linear-gradient(160deg,${t[0]})` }}><small style={{ color: t[1] }}>{t[2]}</small><span>{t[3]}</span></div>
-              ))}
-            </div></div>
-          )}
+        <div className="chips" aria-hidden="true">
+          {['LIVE SPORT', 'MOVIES', 'SERIES', 'KIDS', 'NEWS', 'DOCUMENTARIES'].map((c) => <span key={c}>{c}</span>)}
         </div>
       </section>
     ),

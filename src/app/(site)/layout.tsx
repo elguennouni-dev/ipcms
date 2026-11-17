@@ -17,7 +17,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
           <header className="hdr">
             <Link href="/" aria-label={s.siteName}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={logo || '/brand/logo.png'} alt={s.siteName} className="brandlogo" width={171} height={56} />
+              <img src={logo || '/brand/logo.png'} alt={s.siteName} className="brandlogo" width={208} height={68} />
             </Link>
             <nav className="nav" aria-label="Main">
               <Link href="/#features">Features</Link>
