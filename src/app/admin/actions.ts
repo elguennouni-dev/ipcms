@@ -7,7 +7,10 @@ import sharp from 'sharp';
 import bcrypt from 'bcryptjs';
 import { db } from '@/lib/db';
 import { getSession, login, logout, requireAdmin } from '@/lib/auth';
-import { saveSettings } from '@/lib/settings';
+import { saveSettings, getSettings, getIndexNowKey, pingIndexNow, siteUrl } from '@/lib/settings';
+import { slugify } from '@/lib/markdown';
+import { analyze } from '@/lib/seo';
+import { saveImage, deleteImage } from '@/lib/upload';
 
 const s = (fd: FormData, k: string) => String(fd.get(k) ?? '').trim();
 const done = (to: string): never => redirect(`${to}${to.includes('?') ? '&' : '?'}saved=1`);
@@ -190,8 +193,9 @@ export async function saveSeo(fd: FormData) {
   await requireAdmin();
   await saveSettings({
     seoTitle: s(fd, 'seoTitle'), seoDescription: s(fd, 'seoDescription'),
-    gscVerification: s(fd, 'gscVerification'), ga4: s(fd, 'ga4'),
-    allowIndexing: fd.get('allowIndexing') === 'on' ? '1' : '0'
+    gscVerification: s(fd, 'gscVerification'), bingVerification: s(fd, 'bingVerification'), ga4: s(fd, 'ga4'),
+    twitterHandle: s(fd, 'twitterHandle').replace(/^@?/, '@').replace(/^@$/, ''), sameAs: String(fd.get('sameAs') ?? '').trim(),
+    schemaEnabled: fd.get('schemaEnabled') === 'on' ? '1' : '0'
   });
   done('/admin/seo');
 }
@@ -215,4 +219,130 @@ export async function savePaypal(fd: FormData) {
 }
 export async function whoAmI() {
   return getSession();
+}
+
+
+/* ---------- blog & guides ---------- */
+const postUrl = (type: string, slug: string) => `${siteUrl()}/${type === 'guide' ? 'guides' : 'blog'}/${slug}`;
+const revalPosts = () => { revalidateTag('posts'); };
+
+export async function savePost(fd: FormData) {
+  await requireAdmin();
+  const id = Number(fd.get('id') || 0);
+  const type = s(fd, 'type') === 'guide' ? 'guide' : 'blog';
+  const title = s(fd, 'title');
+  const slug = slugify(s(fd, 'slug') || title);
+  if (!title || !slug) redirect(id ? `/admin/posts/${id}?error=required` : '/admin/posts/new?error=required');
+  const clash = await db.post.findFirst({ where: { type, slug, NOT: id ? { id } : undefined } });
+  if (clash) redirect(id ? `/admin/posts/${id}?error=slug` : '/admin/posts/new?error=slug');
+
+  const existing = id ? await db.post.findUnique({ where: { id } }) : null;
+  const status = s(fd, 'status') === 'published' ? 'published' : 'draft';
+  let publishedAt: Date | null = existing?.publishedAt ?? null;
+  const dateStr = s(fd, 'publishedAt');
+  if (dateStr) { const d = new Date(dateStr); if (!isNaN(d.getTime())) publishedAt = d; }
+  if (status === 'published' && !publishedAt) publishedAt = new Date();
+
+  let coverFile = existing?.coverFile ?? '';
+  const cover = fd.get('cover');
+  if (cover instanceof File && cover.size > 0) {
+    if (cover.size > 10 * 1024 * 1024) redirect(id ? `/admin/posts/${id}?error=size` : '/admin/posts/new?error=size');
+    try {
+      const saved = await saveImage(cover, 'cover', 1400);
+      if (coverFile) await deleteImage(coverFile);
+      coverFile = saved.name;
+    } catch { redirect(id ? `/admin/posts/${id}?error=type` : '/admin/posts/new?error=type'); }
+  }
+
+  const data = {
+    type, slug, title, excerpt: s(fd, 'excerpt'), body: String(fd.get('body') ?? ''), coverFile, coverAlt: s(fd, 'coverAlt'),
+    category: s(fd, 'category'), tags: s(fd, 'tags'), author: s(fd, 'author'), status, publishedAt, faq: String(fd.get('faq') ?? '').trim(),
+    seoTitle: s(fd, 'seoTitle'), seoDescription: s(fd, 'seoDescription'), focusKeyword: s(fd, 'focusKeyword'), canonical: s(fd, 'canonical'), noindex: fd.get('noindex') === 'on'
+  };
+  const seoScore = analyze({ ...data, siteHost: new URL(siteUrl()).host }).score;
+  const post = id ? await db.post.update({ where: { id }, data: { ...data, seoScore } }) : await db.post.create({ data: { ...data, seoScore } });
+
+  // changed URL of a live article: keep the old link working (like WordPress)
+  if (existing && existing.status === 'published' && (existing.slug !== slug || existing.type !== type)) {
+    const from = `/${existing.type === 'guide' ? 'guides' : 'blog'}/${existing.slug}`.toLowerCase();
+    const to = `/${type === 'guide' ? 'guides' : 'blog'}/${slug}`;
+    await db.redirect.upsert({ where: { fromPath: from }, update: { toPath: to, code: 301 }, create: { fromPath: from, toPath: to, code: 301 } });
+  }
+  revalPosts();
+  revalidatePath('/sitemap.xml');
+  if (post.status === 'published' && !post.noindex && post.publishedAt && post.publishedAt <= new Date()) {
+    await pingIndexNow([postUrl(post.type, post.slug), `${siteUrl()}/${post.type === 'guide' ? 'guides' : 'blog'}`]);
+  }
+  redirect(`/admin/posts/${post.id}?saved=1`);
+}
+
+export async function deletePost(fd: FormData) {
+  await requireAdmin();
+  const id = Number(fd.get('id') || 0);
+  const p = id ? await db.post.findUnique({ where: { id } }) : null;
+  if (p) { await deleteImage(p.coverFile); await db.post.delete({ where: { id } }); }
+  revalPosts();
+  redirect('/admin/posts?saved=1');
+}
+
+/* ---------- SEO tools ---------- */
+export async function saveSeoPages(fd: FormData) {
+  await requireAdmin();
+  await saveSettings({
+    faqTitle: s(fd, 'faqTitle'), faqDescription: s(fd, 'faqDescription'), blogTitle: s(fd, 'blogTitle'), blogDescription: s(fd, 'blogDescription'),
+    guidesTitle: s(fd, 'guidesTitle'), guidesDescription: s(fd, 'guidesDescription')
+  });
+  done('/admin/seo');
+}
+export async function saveCrawlers(fd: FormData) {
+  await requireAdmin();
+  await saveSettings({ allowIndexing: fd.get('allowIndexing') === 'on' ? '1' : '0', aiBots: s(fd, 'aiBots') === 'block' ? 'block' : 'allow', robotsTxt: String(fd.get('robotsTxt') ?? '').trim() });
+  done('/admin/seo');
+}
+export async function saveFiles(fd: FormData) {
+  await requireAdmin();
+  await saveSettings({
+    llmsTxt: String(fd.get('llmsTxt') ?? '').trim(), agentsTxt: String(fd.get('agentsTxt') ?? '').trim(),
+    humansTxt: String(fd.get('humansTxt') ?? '').trim(), securityTxt: String(fd.get('securityTxt') ?? '').trim()
+  });
+  done('/admin/seo');
+}
+export async function saveIndexNow(fd: FormData) {
+  await requireAdmin();
+  await getIndexNowKey();
+  await saveSettings({ indexnowEnabled: fd.get('indexnowEnabled') === 'on' ? '1' : '0' });
+  done('/admin/seo');
+}
+export async function submitAllIndexNow() {
+  await requireAdmin();
+  const base = siteUrl();
+  const posts = await db.post.findMany({ where: { status: 'published', noindex: false, publishedAt: { lte: new Date() } } });
+  const legal = await db.legalPage.findMany();
+  const urls = [base, `${base}/faq`, `${base}/blog`, `${base}/guides`, ...posts.map((p) => postUrl(p.type, p.slug)), ...legal.map((l) => `${base}/legal/${l.slug}`)];
+  const ok = await pingIndexNow(urls);
+  redirect(`/admin/seo?${ok ? 'saved=1' : 'error=indexnow'}`);
+}
+
+/* ---------- redirects & 404 monitor ---------- */
+const cleanPath = (v: string) => { let p = v.trim(); if (!p) return ''; try { if (/^https?:\/\//i.test(p)) p = new URL(p).pathname; } catch {} if (!p.startsWith('/')) p = '/' + p; return p.replace(/\/+$/, '').toLowerCase() || '/'; };
+export async function addRedirect(fd: FormData) {
+  await requireAdmin();
+  const from = cleanPath(s(fd, 'fromPath'));
+  let to = s(fd, 'toPath');
+  if (!/^https?:\/\//i.test(to)) to = to.startsWith('/') ? to : '/' + to;
+  if (!from || from === '/' || !to || from === to) redirect('/admin/redirects?error=redirect');
+  const code = Number(fd.get('code')) === 302 ? 302 : 301;
+  await db.redirect.upsert({ where: { fromPath: from }, update: { toPath: to, code }, create: { fromPath: from, toPath: to, code } });
+  await db.notFoundLog.delete({ where: { path: from } }).catch(() => {});
+  done('/admin/redirects');
+}
+export async function deleteRedirect(fd: FormData) {
+  await requireAdmin();
+  await db.redirect.delete({ where: { id: Number(fd.get('id')) } }).catch(() => {});
+  done('/admin/redirects');
+}
+export async function clearNotFound() {
+  await requireAdmin();
+  await db.notFoundLog.deleteMany();
+  done('/admin/redirects');
 }

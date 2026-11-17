@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { POSTS, EXTRA_FAQS } from './content';
 
 const db = new PrismaClient();
 
@@ -123,6 +124,18 @@ async function main() {
     const [key, name, descr] = sections[i];
     await db.section.upsert({ where: { key }, update: {}, create: { key, name, descr, sort: i, visible: key !== 'reviews' } });
   }
+  // sections added in later versions: insert them in a sensible place on existing sites
+  const later: [string, string, string, string][] = [
+    ['guides', 'Setup guides', 'Latest guides (SEO)', 'how'],
+    ['blog', 'Latest from the blog', 'Latest articles (SEO)', 'guides']
+  ];
+  for (const [key, name, descr, after] of later) {
+    if (await db.section.findUnique({ where: { key } })) continue;
+    const anchor = await db.section.findUnique({ where: { key: after } });
+    const pos = anchor ? anchor.sort + 1 : 99;
+    await db.section.updateMany({ where: { sort: { gte: pos } }, data: { sort: { increment: 1 } } });
+    await db.section.create({ data: { key, name, descr, sort: pos, visible: true } });
+  }
 
   const faqs = [
     ['How does the order process work?', 'Choose a plan and send the short form, or message us directly on WhatsApp. We reply with your login details and a simple setup guide.'],
@@ -148,6 +161,23 @@ async function main() {
   for (let i = 1; i <= 12; i++) slots.push([`channel-${i}`, `Channel logo ${i} (320x200)`]);
   for (let i = 1; i <= 12; i++) slots.push([`poster-${i}`, `Poster ${i} (600x900)`]);
   for (const [slot, label] of slots) await db.media.upsert({ where: { slot }, update: { label }, create: { slot, label } });
+
+  // starter content: only once, so deleted articles never come back
+  const seeded = await db.setting.findUnique({ where: { key: 'contentSeeded' } });
+  if (!seeded) {
+    for (const p of POSTS) {
+      if (await db.post.findFirst({ where: { type: p.type, slug: p.slug } })) continue;
+      await db.post.create({ data: {
+        type: p.type, slug: p.slug, title: p.title, excerpt: p.excerpt, body: p.body, category: p.category, faq: p.faq,
+        seoTitle: p.seoTitle, seoDescription: p.seoDescription, focusKeyword: p.focusKeyword, status: 'published',
+        publishedAt: new Date(Date.now() - p.daysAgo * 86_400_000), seoScore: 70
+      } });
+    }
+    const have = (await db.faqItem.findMany()).map((f) => f.question);
+    let n = await db.faqItem.count();
+    for (const [q, a] of EXTRA_FAQS) if (!have.includes(q)) await db.faqItem.create({ data: { question: q, answer: a, sort: n++ } });
+    await db.setting.create({ data: { key: 'contentSeeded', value: '1' } });
+  }
 
   console.log('Seed complete. Admin:', email);
 }

@@ -2,6 +2,8 @@ export function Saved({ sp }: { sp: { saved?: string; error?: string } }) {
   if (sp.saved) return <div className="ok" role="status">Saved ✓ — the live site is updated.</div>;
   if (sp.error === 'size') return <div className="er" role="alert">Image is larger than 10 MB.</div>;
   if (sp.error === 'type') return <div className="er" role="alert">That file is not a valid image.</div>;
+  if (sp.error === 'slug') return <div className="er" role="alert">That URL slug is already used by another article.</div>;
+  if (sp.error === 'required') return <div className="er" role="alert">Title and slug are required.</div>;
   if (sp.error === 'pw') return <div className="er" role="alert">Password must be at least 10 characters.</div>;
   return null;
 }

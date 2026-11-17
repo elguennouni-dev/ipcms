@@ -168,7 +168,10 @@ if [ "$FIRST_RUN" -eq 1 ]; then
   touch .installed
 else
   say "Syncing database schema (non-destructive)"
-  npx prisma db push --skip-generate
+  npx prisma generate
+  npx prisma db push
+  say "Adding any new sections and starter content (safe to repeat)"
+  npm run db:seed
 fi
 
 say "Building the site"

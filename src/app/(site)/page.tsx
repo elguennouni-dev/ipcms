@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getSettings, siteUrl } from '@/lib/settings';
-import { getFaqs, getMedia, getPlans, getReviews, getSections } from '@/lib/data';
+import { PostCard } from '@/components/PostCard';
+import { getPosts, getFaqs, getMedia, getPlans, getReviews, getSections } from '@/lib/data';
 import { Slot } from '@/components/Slot';
 import { PlanPick } from '@/components/PlanPick';
 import { OrderForm } from '@/components/OrderForm';
@@ -19,13 +20,24 @@ const FEATURES = [
 
 export default async function Home() {
   const [s, secs, plans, faqs, reviews, media] = await Promise.all([getSettings(), getSections(), getPlans(), getFaqs(), getReviews(), getMedia()]);
+  const [guides, articles] = await Promise.all([getPosts('guide', 3), getPosts('blog', 3)]);
   const url = siteUrl();
   const trial = s.trialEnabled === '1';
   const defaultPlan = plans.find((p) => p.badge === 'MOST POPULAR')?.slug || plans[0]?.slug || 'trial';
   const hasChannels = Array.from({ length: 12 }, (_, i) => media[`channel-${i + 1}`]).some(Boolean);
   const hasPosters = Array.from({ length: 12 }, (_, i) => media[`poster-${i + 1}`]).some(Boolean);
 
+  const postBlock = (id: string, eyebrow: string, title: string, list: typeof guides, href: string) => list.length ? (
+    <section className="wrap sec" id={id}>
+      <div style={{ maxWidth: 620 }}><div className="eyebrow">{eyebrow}</div><h2 className="h2">{title}</h2></div>
+      <div className="cards" style={{ marginTop: 28 }}>{list.map((p, i) => <PostCard key={p.id} p={p} i={i} />)}</div>
+      <p style={{ marginTop: 22 }}><Link href={href} className="btn">View all →</Link></p>
+    </section>
+  ) : null;
+
   const blocks: Record<string, React.ReactNode> = {
+    guides: postBlock('guides', 'Setup guides', 'Get set up on any device', guides, '/guides'),
+    blog: postBlock('blog', 'From the blog', 'Tips, news and buying advice', articles, '/blog'),
     hero: (
       <section className="herox" id="top">
         {media['hero'] ? (
@@ -104,7 +116,7 @@ export default async function Home() {
     vod: (
       <section className="wrap sec" id="vod">
         <div style={{ maxWidth: 620 }}><div className="eyebrow">On demand</div><h2 className="h2">Films and box sets, whenever you want</h2></div>
-        <div className="pgrid" style={{ marginTop: 40 }}>
+        <div className="cards" style={{ marginTop: 40 }}>
           {Array.from({ length: 12 }, (_, i) => i + 1).filter((i) => !hasPosters || media[`poster-${i}`]).map((i) => (
             <Slot key={i} media={media} slot={`poster-${i}`} label={`POSTER ${i}`} className="poster" style={hasPosters ? undefined : { background: `linear-gradient(160deg,${GRADS[i - 1]})`, color: '#E6E8F2' }} />
           ))}
@@ -190,8 +202,8 @@ export default async function Home() {
   };
 
   const ld = [
-    { '@context': 'https://schema.org', '@type': 'Organization', name: s.siteName, url, logo: `${url}/brand/logo.png`, email: s.supportEmail },
-    { '@context': 'https://schema.org', '@type': 'WebSite', name: s.siteName, url },
+    { '@context': 'https://schema.org', '@type': 'Organization', name: s.siteName, url, logo: `${url}/brand/logo.png`, email: s.supportEmail, areaServed: 'GB', ...(s.sameAs.trim() ? { sameAs: s.sameAs.split(/\s+/).filter(Boolean) } : {}) },
+    { '@context': 'https://schema.org', '@type': 'WebSite', name: s.siteName, url, inLanguage: 'en-GB' },
     ...(faqs.length ? [{ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faqs.map((f) => ({ '@type': 'Question', name: f.question, acceptedAnswer: { '@type': 'Answer', text: f.answer } })) }] : []),
     ...(plans.length ? [{
       '@context': 'https://schema.org', '@type': 'Product', name: `${s.siteName} streaming subscription`, description: s.seoDescription,
@@ -203,7 +215,7 @@ export default async function Home() {
   return (
     <>
       {secs.filter((x) => x.visible).map((x) => <div key={x.key}>{blocks[x.key]}</div>)}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld).replace(/</g, '\\u003c') }} />
+      {s.schemaEnabled === '1' && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld).replace(/</g, '\\u003c') }} />}
     </>
   );
 }

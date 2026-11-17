@@ -26,7 +26,25 @@ export const DEFAULTS: Record<string, string> = {
   paypalEnabled: '0',
   paypalMode: 'sandbox',
   paypalClientId: '',
-  paypalSecret: ''
+  paypalSecret: '',
+  faqTitle: 'FAQ: UK Streaming Subscriptions Explained',
+  faqDescription: 'Answers about devices, free trial, setup, payment and support for UK streaming subscriptions.',
+  blogTitle: 'Blog: Streaming News, Tips and Buying Advice',
+  blogDescription: 'Practical advice for UK viewers: choosing a streaming subscription, getting the best picture quality and fixing common problems.',
+  guidesTitle: 'Setup Guides: Install Streaming on Any Device',
+  guidesDescription: 'Step-by-step setup guides for Fire Stick, Android TV, Smart TVs, iPhone, iPad, Windows and Mac.',
+  bingVerification: '',
+  twitterHandle: '',
+  sameAs: '',
+  schemaEnabled: '1',
+  aiBots: 'allow',
+  robotsTxt: '',
+  llmsTxt: '',
+  agentsTxt: '',
+  humansTxt: '',
+  securityTxt: '',
+  indexnowEnabled: '1',
+  indexnowKey: ''
 };
 
 export const getSettings = unstable_cache(
@@ -48,3 +66,26 @@ export async function saveSettings(values: Record<string, string>) {
 }
 
 export const siteUrl = () => (process.env.SITE_URL || 'http://localhost:3000').replace(/\/$/, '');
+
+export async function getIndexNowKey() {
+  const s = await getSettings();
+  if (s.indexnowKey) return s.indexnowKey;
+  const key = Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+  await saveSettings({ indexnowKey: key });
+  return key;
+}
+
+export async function pingIndexNow(urls: string[]) {
+  try {
+    const s = await getSettings();
+    const base = siteUrl();
+    if (s.indexnowEnabled !== '1' || s.allowIndexing !== '1' || /localhost|127\.0\.0\.1/.test(base) || !urls.length) return false;
+    const key = await getIndexNowKey();
+    const res = await fetch('https://api.indexnow.org/indexnow', {
+      method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      body: JSON.stringify({ host: new URL(base).host, key, keyLocation: `${base}/${key}.txt`, urlList: urls.slice(0, 9000) }),
+      signal: AbortSignal.timeout(8000)
+    });
+    return res.ok || res.status === 202;
+  } catch { return false; }
+}

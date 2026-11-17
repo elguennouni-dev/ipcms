@@ -106,3 +106,47 @@ model DmcaNotice {
   status    String   @default("Open") // Open | Reviewing | Resolved
   createdAt DateTime @default(now())
 }
+
+model Post {
+  id             Int       @id @default(autoincrement())
+  type           String    // blog | guide
+  slug           String
+  title          String
+  excerpt        String    @default("") @db.Text
+  body           String    @db.Text // markdown-like
+  coverFile      String    @default("")
+  coverAlt       String    @default("")
+  category       String    @default("")
+  tags           String    @default("") // comma separated
+  author         String    @default("")
+  status         String    @default("draft") // draft | published
+  publishedAt    DateTime?
+  faq            String    @default("") @db.Text // blocks:  Q: ...\nA: ...
+  seoTitle       String    @default("")
+  seoDescription String    @default("")
+  focusKeyword   String    @default("")
+  canonical      String    @default("")
+  noindex        Boolean   @default(false)
+  seoScore       Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([type, slug])
+  @@index([type, status, publishedAt])
+}
+
+model Redirect {
+  id        Int      @id @default(autoincrement())
+  fromPath  String   @unique
+  toPath    String
+  code      Int      @default(301)
+  hits      Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model NotFoundLog {
+  id     Int      @id @default(autoincrement())
+  path   String   @unique
+  hits   Int      @default(1)
+  lastAt DateTime @default(now())
+}

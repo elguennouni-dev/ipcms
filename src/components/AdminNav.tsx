@@ -5,8 +5,9 @@ import { logoutAction } from '@/app/admin/actions';
 
 const items: [string, string, string, string?][] = [
   ['/admin', 'Orders', 'OPERATIONS'], ['/admin/plans', 'Plans & prices', ''],
+  ['/admin/posts', 'Blog & guides', 'CONTENT'],
   ['/admin/sections', 'Pages & sections', 'WEBSITE'], ['/admin/content', 'Site content', ''], ['/admin/media', 'Media library', ''],
-  ['/admin/legal', 'Legal & DMCA', 'COMPLIANCE'], ['/admin/seo', 'SEO & analytics', 'GROWTH'], ['/admin/settings', 'Settings & payments', 'SYSTEM']
+  ['/admin/legal', 'Legal & DMCA', 'COMPLIANCE'], ['/admin/seo', 'SEO & analytics', 'GROWTH'], ['/admin/redirects', 'Redirects & 404s', ''], ['/admin/settings', 'Settings & payments', 'SYSTEM']
 ];
 
 export function AdminNav({ newOrders, dmcaOpen, siteName }: { newOrders: number; dmcaOpen: number; siteName: string }) {

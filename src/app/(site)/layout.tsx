@@ -20,10 +20,10 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
               <img src={logo || '/brand/logo.png'} alt={s.siteName} className="brandlogo" width={208} height={68} />
             </Link>
             <nav className="nav" aria-label="Main">
-              <Link href="/#features">Features</Link>
               <Link href="/#plans">Plans</Link>
-              <Link href="/#how">How it works</Link>
-              <Link href="/#faq">FAQ</Link>
+              <Link href="/guides">Guides</Link>
+              <Link href="/blog">Blog</Link>
+              <Link href="/faq">FAQ</Link>
             </nav>
             <Link href="/#order" className="btn sm">Get started</Link>
           </header>
@@ -38,7 +38,8 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
               <p className="muted" style={{ fontSize: 14, margin: '10px 0 0' }}>Authorised reseller of licensed streaming subscriptions for customers in the United Kingdom. Content availability varies by plan and region.</p>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 48 }}>
-              <div><h4>Company</h4><Link href="/#plans">Plans</Link><Link href="/#faq">FAQ</Link><Link href="/legal/contact">Contact</Link></div>
+              <div><h4>Company</h4><Link href="/#plans">Plans</Link><Link href="/faq">FAQ</Link><Link href="/legal/contact">Contact</Link></div>
+              <div><h4>Resources</h4><Link href="/guides">Setup guides</Link><Link href="/blog">Blog</Link><a href="/feed.xml">RSS feed</a><a href="/sitemap.xml">Sitemap</a></div>
               <div><h4>Legal</h4>{legal.filter((l) => l.slug !== 'contact').map((l) => <Link key={l.slug} href={`/legal/${l.slug}`}>{l.title}</Link>)}</div>
             </div>
           </div>

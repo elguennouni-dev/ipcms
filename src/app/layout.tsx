@@ -16,14 +16,14 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(siteUrl()),
     title: { default: s.seoTitle, template: `%s | ${s.siteName}` },
     description: s.seoDescription,
-    alternates: { canonical: '/' },
+    alternates: { canonical: '/', types: { 'application/rss+xml': '/feed.xml' } },
     robots: s.allowIndexing === '1' ? { index: true, follow: true } : { index: false, follow: false },
-    verification: token ? { google: token } : undefined,
+    verification: token || s.bingVerification ? { ...(token ? { google: token } : {}), ...(s.bingVerification ? { other: { 'msvalidate.01': s.bingVerification.trim() } } : {}) } : undefined,
     openGraph: {
       type: 'website', locale: 'en_GB', siteName: s.siteName, title: s.seoTitle, description: s.seoDescription, url: '/',
       images: [{ url: og || '/brand/og-default.png', width: 1200, height: 630 }]
     },
-    twitter: { card: 'summary_large_image', title: s.seoTitle, description: s.seoDescription }
+    twitter: { card: 'summary_large_image', title: s.seoTitle, description: s.seoDescription, ...(s.twitterHandle ? { site: s.twitterHandle } : {}) }
   };
 }
 

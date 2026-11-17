@@ -49,3 +49,38 @@ export const getLegalPage = (slug: string) =>
   unstable_cache(async () => db.legalPage.findUnique({ where: { slug } }), ['legal', slug], { tags: ['legal'] })();
 
 export const mediaUrl = (m?: { file: string; v: number }) => (m ? `/media/${m.file}?v=${m.v}` : null);
+
+/* ---------- posts (blog + guides) ---------- */
+const publishedWhere = () => ({ status: 'published', publishedAt: { lte: new Date() } });
+
+export const getPosts = (type: string, take = 60) =>
+  unstable_cache(
+    async () => db.post.findMany({ where: { type, ...publishedWhere() }, orderBy: { publishedAt: 'desc' }, take }),
+    ['posts', type, String(take)],
+    { tags: ['posts'], revalidate: 300 }
+  )();
+
+export const getPost = (type: string, slug: string) =>
+  unstable_cache(
+    async () => db.post.findFirst({ where: { type, slug, ...publishedWhere() } }),
+    ['post', type, slug],
+    { tags: ['posts'], revalidate: 300 }
+  )();
+
+export const getRelated = (type: string, slug: string, category: string) =>
+  unstable_cache(
+    async () => {
+      const same = category ? await db.post.findMany({ where: { type, slug: { not: slug }, category, ...publishedWhere() }, orderBy: { publishedAt: 'desc' }, take: 3 }) : [];
+      if (same.length >= 3) return same;
+      const more = await db.post.findMany({ where: { type, slug: { notIn: [slug, ...same.map((p) => p.slug)] }, ...publishedWhere() }, orderBy: { publishedAt: 'desc' }, take: 3 - same.length });
+      return [...same, ...more];
+    },
+    ['related', type, slug],
+    { tags: ['posts'], revalidate: 300 }
+  )();
+
+export const allPublished = unstable_cache(
+  async () => db.post.findMany({ where: publishedWhere(), orderBy: { publishedAt: 'desc' }, select: { type: true, slug: true, title: true, excerpt: true, updatedAt: true, publishedAt: true, noindex: true, coverFile: true, seoDescription: true } }),
+  ['all-posts'],
+  { tags: ['posts'], revalidate: 300 }
+);

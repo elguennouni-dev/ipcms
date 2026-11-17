@@ -74,3 +74,13 @@ Also back up `UPLOAD_DIR`. aaPanel can schedule both under **Cron**.
 - PayPal checkout (the switch and key fields already exist in *Settings*)
 - Guides/blog pages managed from the admin
 - Email/WhatsApp notification on new order
+
+## Blog, guides, FAQ and SEO toolkit
+
+- **Admin → Blog & guides**: write articles in Markdown with a live SEO score (focus keyword, title/description length, headings, links, alt text). Choose type *guide* (`/guides/slug`) or *blog* (`/blog/slug`), add a cover, per-article FAQ (FAQPage schema) and schedule by setting a future publish date.
+- **Public pages**: `/guides`, `/blog`, `/faq`, plus "Setup guides" and "Latest from the blog" sections on the home page (reorder or hide them in Admin → Sections).
+- **Admin → SEO**: titles/descriptions, Google/Bing verification codes, schema toggle, crawler rules, AI-bot rules, IndexNow, and editors for `robots.txt`, `llms.txt`, `agents.txt`, `humans.txt`, `security.txt`.
+- **Generated automatically**: `/sitemap.xml`, `/feed.xml` (RSS), `/robots.txt`, `/llms.txt`, `/agents.txt`, `/humans.txt`, `/.well-known/security.txt`.
+- **Admin → Redirects**: 301/302 redirects and a 404 monitor.
+- Notes: `agents.txt` is an emerging, non-enforced convention. IndexNow notifies Bing and others, not Google — submit the sitemap in Google Search Console.
+- Starter guides/articles/FAQs are seeded once (`contentSeeded` setting); deleting them is permanent. Re-running `bash install.sh` is safe.
